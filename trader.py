@@ -64,7 +64,9 @@ class AggressiveFuturesTrader:
                 self.setup_exchange()
             if self.exchange is None:
                 raise Exception("Биржа не инициализирована!")
-            balance = self.exchange.fetch_balance()
+            
+            # Получаем баланс фьючерсного аккаунта
+            balance = self.exchange.fetch_balance({'type': 'future'})
             return float(balance['USDT']['free'])
         except Exception as e:
             self.logger.error(f"Ошибка получения баланса: {e}")
@@ -113,7 +115,10 @@ class AggressiveFuturesTrader:
                 symbol=symbol,
                 side=side,
                 amount=size,
-                params={'reduce_only': False}
+                params={
+                    'reduce_only': False,
+                    'type': 'future'
+                }
             )
             self.logger.info(f"Позиция открыта: {order['id']} {symbol} с плечом x{actual_leverage}")
             return True
@@ -133,7 +138,10 @@ class AggressiveFuturesTrader:
                 symbol=symbol,
                 side=side,
                 amount=size,
-                params={'reduce_only': True}
+                params={
+                    'reduce_only': True,
+                    'type': 'future'
+                }
             )
             self.logger.info(f"Позиция закрыта: {order['id']} {symbol}")
             return True
@@ -168,8 +176,19 @@ class AggressiveFuturesTrader:
             if self.exchange is None:
                 self.setup_exchange()
             
+            # Загружаем рынки если они не загружены
+            if not hasattr(self.exchange, 'markets') or not self.exchange.markets:
+                self.exchange.load_markets()
+            
             # Получаем информацию о рынке для определения максимального плеча
             market = self.exchange.market(symbol)
+            
+            # Проверяем, что это фьючерсный контракт
+            if market.get('type') != 'swap' and market.get('type') != 'future':
+                self.logger.warning(f"{symbol} не является фьючерсным контрактом, пропускаем установку плеча")
+                return LEVERAGE
+            
+            # Получаем максимальное плечо
             max_leverage = market.get('limits', {}).get('leverage', {}).get('max', LEVERAGE)
             
             # Устанавливаем максимальное плечо
