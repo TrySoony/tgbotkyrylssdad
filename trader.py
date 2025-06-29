@@ -190,6 +190,7 @@ class AggressiveFuturesTrader:
                     }
                     strategy.update_candle_history(candle_dict)
                     candle_analysis = strategy.analyze_candle(candle_dict)
+                    self.logger.info(f"ANALYZE {symbol}: {candle_analysis}")
                     if not self.current_positions[symbol]:
                         signal = strategy.check_entry_signal(candle_analysis)
                         if signal:

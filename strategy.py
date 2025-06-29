@@ -1,5 +1,6 @@
 # Стратегия для агрессивного трейдера
 
+
 class AggressiveFuturesStrategy:
     def __init__(self, params):
         self.body_threshold = params['CANDLE_BODY_THRESHOLD']
@@ -44,20 +45,26 @@ class AggressiveFuturesStrategy:
         }
 
     def check_entry_signal(self, analysis):
+        print(f"Проверка сигнала: {analysis}")
         if (
             analysis['body'] > self.body_threshold and
             analysis['volume'] > analysis['avg_volume']
         ):
             if self.use_trend:
                 if analysis['direction'] == 'long' and self.trade_long and analysis['trend_up']:
+                    print("Сигнал на ЛОНГ!")
                     return 'long'
                 if analysis['direction'] == 'short' and self.trade_short and analysis['trend_down']:
+                    print("Сигнал на ШОРТ!")
                     return 'short'
             else:
                 if analysis['direction'] == 'long' and self.trade_long:
+                    print("Сигнал на ЛОНГ!")
                     return 'long'
                 if analysis['direction'] == 'short' and self.trade_short:
+                    print("Сигнал на ШОРТ!")
                     return 'short'
+        print("Нет сигнала.")
         return None
 
     def calculate_position_size(self, balance, price):
