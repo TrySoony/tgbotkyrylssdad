@@ -1,5 +1,7 @@
 # Стратегия для агрессивного трейдера
 
+import ta
+
 class AggressiveFuturesStrategy:
     def __init__(self, params):
         self.body_threshold = params['CANDLE_BODY_THRESHOLD']
@@ -7,22 +9,40 @@ class AggressiveFuturesStrategy:
         self.take_profit_percent = params['TAKE_PROFIT_PERCENT']
         self.stop_loss_percent = params['STOP_LOSS_PERCENT']
         self.position_size_percent = params['POSITION_SIZE_PERCENT']
+        self.ma_length = params.get('MA_LENGTH', 50)
+        self.use_trend = params.get('USE_TREND', True)
+        self.trade_long = params.get('TRADE_LONG', True)
+        self.trade_short = params.get('TRADE_SHORT', True)
         self.candle_history = []
+        self.close_history = []
 
     def update_candle_history(self, candle):
         self.candle_history.append(candle)
-        if len(self.candle_history) > self.volume_period:
+        self.close_history.append(candle['close'])
+        if len(self.candle_history) > max(self.volume_period, self.ma_length):
             self.candle_history.pop(0)
+            self.close_history.pop(0)
+
+    def get_ma(self):
+        if len(self.close_history) < self.ma_length:
+            return None
+        return sum(self.close_history[-self.ma_length:]) / self.ma_length
 
     def analyze_candle(self, candle):
         body = abs(candle['close'] - candle['open']) / candle['open'] * 100
         direction = 'long' if candle['close'] > candle['open'] else 'short'
-        avg_volume = sum(c['volume'] for c in self.candle_history) / max(1, len(self.candle_history))
+        avg_volume = sum(c['volume'] for c in self.candle_history[-self.volume_period:]) / max(1, min(len(self.candle_history), self.volume_period))
+        ma = self.get_ma()
+        trend_up = ma is not None and candle['close'] > ma
+        trend_down = ma is not None and candle['close'] < ma
         return {
             'body': body,
             'direction': direction,
             'volume': candle['volume'],
-            'avg_volume': avg_volume
+            'avg_volume': avg_volume,
+            'ma': ma,
+            'trend_up': trend_up,
+            'trend_down': trend_down
         }
 
     def check_entry_signal(self, analysis):
@@ -30,7 +50,16 @@ class AggressiveFuturesStrategy:
             analysis['body'] > self.body_threshold and
             analysis['volume'] > analysis['avg_volume']
         ):
-            return analysis['direction']
+            if self.use_trend:
+                if analysis['direction'] == 'long' and self.trade_long and analysis['trend_up']:
+                    return 'long'
+                if analysis['direction'] == 'short' and self.trade_short and analysis['trend_down']:
+                    return 'short'
+            else:
+                if analysis['direction'] == 'long' and self.trade_long:
+                    return 'long'
+                if analysis['direction'] == 'short' and self.trade_short:
+                    return 'short'
         return None
 
     def calculate_position_size(self, balance, price):
