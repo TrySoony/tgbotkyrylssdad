@@ -4,6 +4,7 @@ import logging
 from datetime import datetime
 from config import *
 from strategy import AggressiveFuturesStrategy
+from tg_bot import send_trade_notification
 
 class AggressiveFuturesTrader:
     def __init__(self):
@@ -224,6 +225,17 @@ class AggressiveFuturesTrader:
                                     'entry_time': datetime.now()
                                 }
                                 strategy.log_position_opened(self.current_positions[symbol])
+                                # Уведомление об открытии позиции
+                                msg = (
+                                    f"<b>ОТКРЫТА ПОЗИЦИЯ</b>\n"
+                                    f"Пара: <b>{symbol}</b>\n"
+                                    f"Направление: <b>{signal.upper()}</b>\n"
+                                    f"Объём: <b>{position_size:.4f}</b>\n"
+                                    f"Вход: <b>{current_price:.4f}</b>\n"
+                                    f"TP: <b>{self.current_positions[symbol]['take_profit']:.4f}</b>\n"
+                                    f"SL: <b>{self.current_positions[symbol]['stop_loss']:.4f}</b>\n"
+                                )
+                                await send_trade_notification(msg)
                     elif self.current_positions[symbol]:
                         should_exit, reason = strategy.check_exit_conditions(self.current_positions[symbol], current_price)
                         if should_exit:
@@ -235,6 +247,20 @@ class AggressiveFuturesTrader:
                                     self.current_positions[symbol], current_price, reason, pnl
                                 )
                                 self.update_daily_stats(pnl)
+                                # Уведомление о закрытии позиции
+                                msg = (
+                                    f"<b>ЗАКРЫТА ПОЗИЦИЯ</b>\n"
+                                    f"Пара: <b>{symbol}</b>\n"
+                                    f"Направление: <b>{self.current_positions[symbol]['direction'].upper()}</b>\n"
+                                    f"Объём: <b>{self.current_positions[symbol]['size']:.4f}</b>\n"
+                                    f"Вход: <b>{self.current_positions[symbol]['entry_price']:.4f}</b>\n"
+                                    f"Выход: <b>{current_price:.4f}</b>\n"
+                                    f"TP: <b>{self.current_positions[symbol]['take_profit']:.4f}</b>\n"
+                                    f"SL: <b>{self.current_positions[symbol]['stop_loss']:.4f}</b>\n"
+                                    f"Причина: <b>{reason}</b>\n"
+                                    f"PnL: <b>{pnl:.2f} USDT</b>\n"
+                                )
+                                await send_trade_notification(msg)
                                 self.current_positions[symbol] = None
                                 if self.get_balance() >= TARGET_BALANCE:
                                     self.logger.info(f"ЦЕЛЬ ДОСТИГНУТА! Баланс: ${self.get_balance():.2f}")
