@@ -83,7 +83,7 @@ class AggressiveFuturesTrader:
         try:
             if self.exchange is None:
                 self.setup_exchange()
-            ohlcv = self.exchange.fetch_ohlcv(symbol, TIMEFRAME, limit=20)
+            ohlcv = self.exchange.fetch_ohlcv(symbol, TIMEFRAME, limit=max(VOLUME_PERIOD, MA_LENGTH, 100))
             return ohlcv
         except Exception as e:
             self.logger.error(f"Ошибка получения OHLCV {symbol}: {e}")
@@ -184,6 +184,18 @@ class AggressiveFuturesTrader:
                     ohlcv_data = self.get_ohlcv_data(symbol)
                     if not ohlcv_data:
                         await asyncio.sleep(5)
+                        continue
+                    if len(strategy.candle_history) < max(VOLUME_PERIOD, MA_LENGTH):
+                        for candle in ohlcv_data:
+                            candle_dict = {
+                                'timestamp': candle[0],
+                                'open': candle[1],
+                                'high': candle[2],
+                                'low': candle[3],
+                                'close': candle[4],
+                                'volume': candle[5]
+                            }
+                            strategy.update_candle_history(candle_dict)
                         continue
                     latest_candle = ohlcv_data[-1]
                     candle_dict = {
