@@ -1,7 +1,5 @@
 # Стратегия для агрессивного трейдера
 
-import ta
-
 class AggressiveFuturesStrategy:
     def __init__(self, params):
         self.body_threshold = params['CANDLE_BODY_THRESHOLD']
