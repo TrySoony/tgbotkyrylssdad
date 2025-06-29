@@ -8,19 +8,19 @@ API_SECRET = "1OeWgfvSOJVacF5iWS77Dt4HwkfKlcDNf4es"
 ENABLE_TRADING = True  # По умолчанию торговля выключена
 DEMO_MODE = False       # По умолчанию демо-режим
 SYMBOLS = [
-    "HUSDTUSDT",
-    "SKATEUSDTUSDT",
-    "SOSUSDTUSDT",
-    "CUDIUSDTUSDT",
-    "HOMEUSDTUSDT",
-    "NEWTUSDTUSDT",
-    "SAHARAUSDTUSDT",
-    "SPKUSDTUSDT",
-    "SQUSDTUSDT",
-    "BDXNUSDTUSDT",
-    "LAUSDTUSDT",
-    "B2USDTUSDT",
-    "RESOLVUSDTUSDT"
+    "HUSDT",
+    "SKATEUSDT",
+    "SOSOUSDT",
+    "CUDISUSDT",
+    "HOMEUSDT",
+    "NEWTUSDT",
+    "SAHARAUSDT",
+    "SPKUSDT",
+    "SQDUSDT",
+    "BDXNUSDT",
+    "LAUSDT",
+    "B2USDT",
+    "RESOLVUSDT"
 ]
 LEVERAGE = 50
 POSITION_SIZE_PERCENT = 100
