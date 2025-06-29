@@ -49,6 +49,7 @@ class AggressiveFuturesTrader:
             return SYMBOLS
         try:
             markets = self.exchange.load_markets()
+            self.logger.info(f"Доступные рынки: {list(markets.keys())}")
             return [s for s in markets if s.endswith('/USDT') and markets[s]['future']]
         except Exception as e:
             self.logger.error(f"Ошибка получения списка пар: {e}")

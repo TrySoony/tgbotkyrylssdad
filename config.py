@@ -7,7 +7,21 @@ API_SECRET = "1OeWgfvSOJVacF5iWS77Dt4HwkfKlcDNf4es"
 # Настройки торговли
 ENABLE_TRADING = True  # По умолчанию торговля выключена
 DEMO_MODE = False       # По умолчанию демо-режим
-SYMBOLS = None          # None = автоопределение всех USDT-пар
+SYMBOLS = [
+    "HUSDT/USDT",
+    "SKATEUSDT/USDT",
+    "SOSUSDT/USDT",
+    "CUDIUSDT/USDT",
+    "HOMEUSDT/USDT",
+    "NEWTUSDT/USDT",
+    "SAHARAUSDT/USDT",
+    "SPKUSDT/USDT",
+    "SQUSDT/USDT",
+    "BDXNUSDT/USDT",
+    "LAUSDT/USDT",
+    "B2USDT/USDT",
+    "RESOLVUSDT/USDT"
+]
 LEVERAGE = 50
 POSITION_SIZE_PERCENT = 100
 TIMEFRAME = "1m"
