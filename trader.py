@@ -154,6 +154,7 @@ class AggressiveFuturesTrader:
         self.setup_logging()
         self.setup_exchange()
         self.symbols = self.get_symbols()
+        self.logger.info(f"Торгуемые пары: {self.symbols}")
         self.strategies = {symbol: AggressiveFuturesStrategy({
             'CANDLE_BODY_THRESHOLD': CANDLE_BODY_THRESHOLD,
             'VOLUME_PERIOD': VOLUME_PERIOD,

@@ -1,8 +1,10 @@
 # Стратегия для агрессивного трейдера
 
+import logging
 
 class AggressiveFuturesStrategy:
     def __init__(self, params):
+        self.logger = logging.getLogger("strategy")
         self.body_threshold = params['CANDLE_BODY_THRESHOLD']
         self.volume_period = params['VOLUME_PERIOD']
         self.take_profit_percent = params['TAKE_PROFIT_PERCENT']
@@ -43,30 +45,30 @@ class AggressiveFuturesStrategy:
             'trend_up': trend_up,
             'trend_down': trend_down
         }
-        print(f"ANALYZE: {analysis}")
+        self.logger.info(f"ANALYZE: {analysis}")
         return analysis
 
     def check_entry_signal(self, analysis):
-        print(f"Проверка сигнала: {analysis}")
+        self.logger.info(f"Проверка сигнала: {analysis}")
         if (
             analysis['body'] > self.body_threshold and
             analysis['volume'] > analysis['avg_volume']
         ):
             if self.use_trend:
                 if analysis['direction'] == 'long' and self.trade_long and analysis['trend_up']:
-                    print("Сигнал на ЛОНГ!")
+                    self.logger.info("Сигнал на ЛОНГ!")
                     return 'long'
                 if analysis['direction'] == 'short' and self.trade_short and analysis['trend_down']:
-                    print("Сигнал на ШОРТ!")
+                    self.logger.info("Сигнал на ШОРТ!")
                     return 'short'
             else:
                 if analysis['direction'] == 'long' and self.trade_long:
-                    print("Сигнал на ЛОНГ!")
+                    self.logger.info("Сигнал на ЛОНГ!")
                     return 'long'
                 if analysis['direction'] == 'short' and self.trade_short:
-                    print("Сигнал на ШОРТ!")
+                    self.logger.info("Сигнал на ШОРТ!")
                     return 'short'
-        print("Нет сигнала.")
+        self.logger.info("Нет сигнала.")
         return None
 
     def calculate_position_size(self, balance, price):
@@ -104,10 +106,10 @@ class AggressiveFuturesStrategy:
             return (position['entry_price'] - current_price) * position['size']
 
     def log_signal(self, signal, analysis, balance):
-        print(f"Сигнал: {signal}, Анализ: {analysis}, Баланс: {balance}")
+        self.logger.info(f"Сигнал: {signal}, Анализ: {analysis}, Баланс: {balance}")
 
     def log_position_opened(self, position):
-        print(f"ПОЗИЦИЯ ОТКРЫТА: {position}")
+        self.logger.info(f"ПОЗИЦИЯ ОТКРЫТА: {position}")
 
     def log_position_closed(self, position, price, reason, pnl):
-        print(f"ПОЗИЦИЯ ЗАКРЫТА: {position}, Цена: {price}, Причина: {reason}, PnL: {pnl}") 
+        self.logger.info(f"ПОЗИЦИЯ ЗАКРЫТА: {position}, Цена: {price}, Причина: {reason}, PnL: {pnl}") 
