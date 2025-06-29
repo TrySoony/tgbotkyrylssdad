@@ -9,6 +9,7 @@ from config import TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_ID, ENABLE_TRADING, DEMO_M
 from trader import AggressiveFuturesTrader
 from aiogram.client.default import DefaultBotProperties
 from datetime import datetime
+from notifications import send_trade_notification
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tg_bot")
@@ -56,6 +57,39 @@ def get_balance_keyboard():
         ]
     ])
     return keyboard
+
+def get_positions_keyboard():
+    """Создаёт клавиатуру для управления открытыми позициями."""
+    keyboard = []
+    
+    # Получаем открытые позиции
+    open_positions = [symbol for symbol, pos in trader.current_positions.items() if pos]
+    
+    if not open_positions:
+        keyboard.append([InlineKeyboardButton(text="Нет открытых позиций", callback_data="no_positions")])
+    else:
+        for symbol in open_positions:
+            position = trader.current_positions[symbol]
+            # Создаём кнопки для каждой позиции
+            keyboard.append([
+                InlineKeyboardButton(
+                    text=f"📈 {symbol} ({position['direction'].upper()})", 
+                    callback_data=f"pos_info_{symbol}"
+                )
+            ])
+            keyboard.append([
+                InlineKeyboardButton(
+                    text=f"➕ Увеличить {symbol}", 
+                    callback_data=f"increase_{symbol}"
+                ),
+                InlineKeyboardButton(
+                    text=f"❌ Закрыть {symbol}", 
+                    callback_data=f"close_{symbol}"
+                )
+            ])
+    
+    keyboard.append([InlineKeyboardButton(text="🔙 Назад", callback_data="main_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 # --- Команды ---
 @dp.message(Command("start"))
@@ -240,8 +274,86 @@ async def handle_callback(callback: CallbackQuery):
         else:
             await callback.message.edit_text(
                 "<b>Открытые позиции:</b>\n" + "\n".join(positions),
-                reply_markup=get_main_keyboard()
+                reply_markup=get_positions_keyboard()
             )
+    
+    elif callback.data.startswith("pos_info_"):
+        symbol = callback.data.replace("pos_info_", "")
+        if symbol in trader.current_positions and trader.current_positions[symbol]:
+            position = trader.current_positions[symbol]
+            current_price = trader.get_current_price(symbol)
+            pnl = trader.strategies[symbol].calculate_pnl(position, current_price)
+            
+            info_text = f"""
+<b>📊 Информация о позиции</b>
+
+<b>Пара:</b> {symbol}
+<b>Направление:</b> {position['direction'].upper()}
+<b>Объём:</b> {position['size']:.4f}
+<b>Цена входа:</b> {position['entry_price']:.4f}
+<b>Текущая цена:</b> {current_price:.4f}
+<b>Take Profit:</b> {position['take_profit']:.4f}
+<b>Stop Loss:</b> {position['stop_loss']:.4f}
+<b>P&L:</b> {pnl:.2f} USDT
+<b>Время входа:</b> {position['entry_time'].strftime('%H:%M:%S')}
+"""
+            await callback.message.edit_text(
+                info_text,
+                reply_markup=get_positions_keyboard()
+            )
+    
+    elif callback.data.startswith("increase_"):
+        symbol = callback.data.replace("increase_", "")
+        if symbol in trader.current_positions and trader.current_positions[symbol]:
+            # Увеличиваем позицию на 50% от текущего размера
+            position = trader.current_positions[symbol]
+            current_price = trader.get_current_price(symbol)
+            additional_size = position['size'] * 0.5  # Увеличиваем на 50%
+            
+            if trader.open_position(symbol, position['direction'], current_price, additional_size):
+                # Обновляем размер позиции
+                trader.current_positions[symbol]['size'] += additional_size
+                await callback.answer(f"✅ Позиция {symbol} увеличена на {additional_size:.4f}")
+            else:
+                await callback.answer(f"❌ Ошибка увеличения позиции {symbol}", show_alert=True)
+        else:
+            await callback.answer("❌ Позиция не найдена", show_alert=True)
+    
+    elif callback.data.startswith("close_"):
+        symbol = callback.data.replace("close_", "")
+        if symbol in trader.current_positions and trader.current_positions[symbol]:
+            position = trader.current_positions[symbol]
+            current_price = trader.get_current_price(symbol)
+            
+            if trader.close_position(symbol, position['direction'], position['size']):
+                pnl = trader.strategies[symbol].calculate_pnl(position, current_price)
+                if DEMO_MODE:
+                    trader.current_balance += pnl
+                trader.strategies[symbol].log_position_closed(position, current_price, "manual_close", pnl)
+                trader.update_daily_stats(pnl)
+                
+                # Отправляем уведомление о закрытии
+                msg = (
+                    f"<b>ЗАКРЫТА ПОЗИЦИЯ (РУЧНОЕ ЗАКРЫТИЕ)</b>\n"
+                    f"Пара: <b>{symbol}</b>\n"
+                    f"Направление: <b>{position['direction'].upper()}</b>\n"
+                    f"Объём: <b>{position['size']:.4f}</b>\n"
+                    f"Вход: <b>{position['entry_price']:.4f}</b>\n"
+                    f"Выход: <b>{current_price:.4f}</b>\n"
+                    f"Причина: <b>Ручное закрытие</b>\n"
+                    f"PnL: <b>{pnl:.2f} USDT</b>\n"
+                )
+                await send_trade_notification(msg)
+                
+                trader.current_positions[symbol] = None
+                await callback.answer(f"✅ Позиция {symbol} закрыта. PnL: {pnl:.2f} USDT")
+            else:
+                await callback.answer(f"❌ Ошибка закрытия позиции {symbol}", show_alert=True)
+        else:
+            await callback.answer("❌ Позиция не найдена", show_alert=True)
+    
+    elif callback.data == "no_positions":
+        await callback.answer("Нет открытых позиций для управления", show_alert=True)
     
     elif callback.data == "logs":
         if not os.path.exists('trading.log'):

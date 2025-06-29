@@ -98,11 +98,14 @@ class AggressiveFuturesTrader:
             if self.exchange is None:
                 self.setup_exchange()
             
-            # Проверяем баланс перед открытием позиции
+            # Устанавливаем плечо перед открытием позиции и получаем его значение
+            actual_leverage = self.setup_leverage(symbol)
+            
+            # Проверяем баланс перед открытием позиции с учётом реального плеча
             balance = self.get_balance()
-            required_margin = (size * entry_price) / LEVERAGE
+            required_margin = (size * entry_price) / actual_leverage
             if required_margin > balance:
-                self.logger.warning(f"Недостаточно баланса для {symbol}: требуется {required_margin:.2f}, доступно {balance:.2f}")
+                self.logger.warning(f"Недостаточно баланса для {symbol}: требуется {required_margin:.2f}, доступно {balance:.2f} (плечо x{actual_leverage})")
                 return False
             
             side = 'buy' if direction == 'long' else 'sell'
@@ -112,7 +115,7 @@ class AggressiveFuturesTrader:
                 amount=size,
                 params={'reduce_only': False}
             )
-            self.logger.info(f"Позиция открыта: {order['id']} {symbol}")
+            self.logger.info(f"Позиция открыта: {order['id']} {symbol} с плечом x{actual_leverage}")
             return True
         except Exception as e:
             self.logger.error(f"Ошибка открытия позиции {symbol}: {e}")
@@ -159,12 +162,46 @@ class AggressiveFuturesTrader:
             self.daily_pnl = 0
             self.session_start_time = datetime.now()
 
+    def setup_leverage(self, symbol):
+        """Установка максимального плеча для торговой пары."""
+        try:
+            if self.exchange is None:
+                self.setup_exchange()
+            
+            # Получаем информацию о рынке для определения максимального плеча
+            market = self.exchange.market(symbol)
+            max_leverage = market.get('limits', {}).get('leverage', {}).get('max', LEVERAGE)
+            
+            # Устанавливаем максимальное плечо
+            self.exchange.set_leverage(max_leverage, symbol)
+            self.logger.info(f"Установлено плечо x{max_leverage} для {symbol}")
+            return max_leverage
+        except Exception as e:
+            self.logger.error(f"Ошибка установки плеча для {symbol}: {e}")
+            # В случае ошибки используем значение по умолчанию
+            try:
+                self.exchange.set_leverage(LEVERAGE, symbol)
+                self.logger.info(f"Установлено плечо по умолчанию x{LEVERAGE} для {symbol}")
+                return LEVERAGE
+            except Exception as e2:
+                self.logger.error(f"Не удалось установить плечо для {symbol}: {e2}")
+                return LEVERAGE
+
+    def setup_all_leverages(self):
+        """Установка плеча для всех торговых пар."""
+        for symbol in self.symbols:
+            self.setup_leverage(symbol)
+
     async def run_trading_cycle(self):
         self.logger.info("Запуск торгового цикла...")
         self.setup_logging()
         self.setup_exchange()
         self.symbols = self.get_symbols()
         self.logger.info(f"Торгуемые пары: {self.symbols}")
+        
+        # Устанавливаем плечо для всех пар
+        self.setup_all_leverages()
+        
         self.strategies = {symbol: AggressiveFuturesStrategy({
             'CANDLE_BODY_THRESHOLD': CANDLE_BODY_THRESHOLD,
             'VOLUME_PERIOD': VOLUME_PERIOD,
