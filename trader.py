@@ -97,6 +97,14 @@ class AggressiveFuturesTrader:
                 return True
             if self.exchange is None:
                 self.setup_exchange()
+            
+            # Проверяем баланс перед открытием позиции
+            balance = self.get_balance()
+            required_margin = (size * entry_price) / LEVERAGE
+            if required_margin > balance:
+                self.logger.warning(f"Недостаточно баланса для {symbol}: требуется {required_margin:.2f}, доступно {balance:.2f}")
+                return False
+            
             side = 'buy' if direction == 'long' else 'sell'
             order = self.exchange.create_market_order(
                 symbol=symbol,
