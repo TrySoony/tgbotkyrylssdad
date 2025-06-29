@@ -11,9 +11,6 @@ from aiogram.client.default import DefaultBotProperties
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_ID
 import config
 
-# Для получения информации о торговле
-from main import AggressiveFuturesTrader
-
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,9 +20,6 @@ bot = Bot(
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 dp = Dispatcher()
-
-# Глобальный объект трейдера (можно заменить на singleton или manager)
-trader: AggressiveFuturesTrader = None
 
 # --- Вспомогательные функции ---
 def reload_config():
