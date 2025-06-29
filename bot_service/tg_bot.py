@@ -8,6 +8,7 @@ import os
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_ID, ENABLE_TRADING, DEMO_MODE
 from trader import AggressiveFuturesTrader
 from aiogram.client.default import DefaultBotProperties
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tg_bot")
@@ -265,15 +266,9 @@ async def handle_callback(callback: CallbackQuery):
     elif callback.data == "check_balance":
         try:
             balance = trader.get_balance()
-            await callback.message.edit_text(
-                f"<b>💳 Доступный баланс:</b> ${balance:.2f}",
-                reply_markup=get_balance_keyboard()
-            )
+            await callback.answer(f"💳 Доступный баланс: ${balance:.2f}\n<i>{datetime.now().strftime('%H:%M:%S')}</i>", show_alert=True)
         except Exception as e:
-            await callback.message.edit_text(
-                f"❌ Ошибка получения баланса: {e}",
-                reply_markup=get_balance_keyboard()
-            )
+            await callback.answer(f"❌ Ошибка получения баланса: {e}", show_alert=True)
     
     elif callback.data == "set_amount":
         await callback.message.edit_text(
