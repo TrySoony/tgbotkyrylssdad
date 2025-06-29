@@ -1,8 +1,8 @@
 # Конфигурация для торгового и Telegram-бота
 
 # API ключи Bybit (замени на свои)
-API_KEY = "ваш_api_ключ"
-API_SECRET = "ваш_секретный_ключ"
+API_KEY = "LdfcJrBATjtIjsHNYj"
+API_SECRET = "1OeWgfvSOJVacF5iWS77Dt4HwkfKlcDNf4es"
 
 # Настройки торговли
 ENABLE_TRADING = False  # По умолчанию торговля выключена
@@ -26,5 +26,5 @@ LOG_LEVEL = "INFO"
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 # Telegram-бот
-TELEGRAM_BOT_TOKEN = "ваш_токен_бота"
-TELEGRAM_ADMIN_ID = 123456789  # Замени на свой Telegram ID 
+TELEGRAM_BOT_TOKEN = "7524709955:AAGokRF2gy0gNvswsrU7I2imkLNMGScBI7c"
+TELEGRAM_ADMIN_ID = 5058443853  # Замени на свой Telegram ID 
