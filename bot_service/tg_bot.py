@@ -5,7 +5,7 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 import logging
 import os
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_ID
+from config import TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_ID, ENABLE_TRADING, DEMO_MODE
 from trader import AggressiveFuturesTrader
 
 logging.basicConfig(level=logging.INFO)
@@ -26,7 +26,7 @@ async def cmd_start(message: types.Message):
     if message.from_user.id != TELEGRAM_ADMIN_ID:
         await message.answer("⛔️ Нет доступа")
         return
-    await message.answer("<b>🤖 Агрессивный трейдинг-бот</b>\n\nДоступные команды:\n/status — статус\n/enable — включить торговлю\n/disable — выключить торговлю\n/positions — открытые позиции\n/logs — последние логи")
+    await message.answer("<b>🤖 Агрессивный трейдинг-бот</b>\n\nДоступные команды:\n/status — статус\n/enable — включить торговлю\n/disable — выключить торговлю\n/positions — открытые позиции\n/logs — последние логи\n/switch — переключить режим")
 
 @dp.message(Command("status"))
 async def cmd_status(message: types.Message):
@@ -34,7 +34,7 @@ async def cmd_status(message: types.Message):
         await message.answer("⛔️ Нет доступа")
         return
     status = "🟢 ВКЛЮЧЕНА" if trader.is_running() else "🔴 ОТКЛЮЧЕНА"
-    await message.answer(f"<b>Статус торговли:</b> {status}\n<b>Демо-режим:</b> {'🟢' if trader.current_balance == trader.initial_balance else '🔴'}")
+    await message.answer(f"<b>Статус торговли:</b> {status}\n<b>Демо-режим:</b> {'🟢' if trader.current_balance == trader.initial_balance or DEMO_MODE else '🔴'}")
 
 @dp.message(Command("enable"))
 async def cmd_enable(message: types.Message):
@@ -81,6 +81,46 @@ async def cmd_logs(message: types.Message):
     with open('trading.log', 'r', encoding='utf-8') as f:
         lines = f.readlines()
     await message.answer("<b>Последние логи:</b>\n<pre>" + ''.join(lines[-20:]) + "</pre>", parse_mode=ParseMode.HTML)
+
+@dp.message(Command("switch"))
+async def cmd_switch(message: types.Message):
+    if message.from_user.id != TELEGRAM_ADMIN_ID:
+        await message.answer("⛔️ Нет доступа")
+        return
+    # Переключаем режим в config.py
+    import config
+    import importlib
+    importlib.reload(config)
+    # Читаем и меняем строки
+    with open('config.py', 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    new_lines = []
+    new_enable = None
+    new_demo = None
+    for line in lines:
+        if line.strip().startswith('ENABLE_TRADING'):
+            if 'True' in line:
+                new_lines.append('ENABLE_TRADING = False  # Отключено через Telegram\n')
+                new_enable = False
+            else:
+                new_lines.append('ENABLE_TRADING = True  # Включено через Telegram\n')
+                new_enable = True
+        elif line.strip().startswith('DEMO_MODE'):
+            if 'True' in line:
+                new_lines.append('DEMO_MODE = False  # Отключено через Telegram\n')
+                new_demo = False
+            else:
+                new_lines.append('DEMO_MODE = True  # Включено через Telegram\n')
+                new_demo = True
+        else:
+            new_lines.append(line)
+    with open('config.py', 'w', encoding='utf-8') as f:
+        f.writelines(new_lines)
+    importlib.reload(config)
+    if new_enable and not new_demo:
+        await message.answer('⚡️ Переключено на <b>РЕАЛЬНУЮ ТОРГОВЛЮ</b>! Будьте осторожны!')
+    else:
+        await message.answer('🟢 Переключено на <b>ДЕМО-РЕЖИМ</b>.')
 
 # --- Запуск ---
 async def main():
