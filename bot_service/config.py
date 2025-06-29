@@ -5,8 +5,8 @@ API_KEY = "LdfcJrBATjtIjsHNYj"
 API_SECRET = "1OeWgfvSOJVacF5iWS77Dt4HwkfKlcDNf4es"
 
 # Настройки торговли
-ENABLE_TRADING = False  # По умолчанию торговля выключена
-DEMO_MODE = True        # По умолчанию демо-режим
+ENABLE_TRADING = True  # По умолчанию торговля выключена
+DEMO_MODE = False       # По умолчанию демо-режим
 SYMBOLS = None          # None = автоопределение всех USDT-пар
 LEVERAGE = 50
 POSITION_SIZE_PERCENT = 95
