@@ -34,7 +34,7 @@ class AggressiveFuturesStrategy:
         ma = self.get_ma()
         trend_up = ma is not None and candle['close'] > ma
         trend_down = ma is not None and candle['close'] < ma
-        return {
+        analysis = {
             'body': body,
             'direction': direction,
             'volume': candle['volume'],
@@ -43,6 +43,8 @@ class AggressiveFuturesStrategy:
             'trend_up': trend_up,
             'trend_down': trend_down
         }
+        print(f"ANALYZE: {analysis}")
+        return analysis
 
     def check_entry_signal(self, analysis):
         print(f"Проверка сигнала: {analysis}")

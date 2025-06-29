@@ -159,7 +159,11 @@ class AggressiveFuturesTrader:
             'VOLUME_PERIOD': VOLUME_PERIOD,
             'TAKE_PROFIT_PERCENT': TAKE_PROFIT_PERCENT,
             'STOP_LOSS_PERCENT': STOP_LOSS_PERCENT,
-            'POSITION_SIZE_PERCENT': POSITION_SIZE_PERCENT
+            'POSITION_SIZE_PERCENT': POSITION_SIZE_PERCENT,
+            'MA_LENGTH': MA_LENGTH,
+            'USE_TREND': USE_TREND,
+            'TRADE_LONG': TRADE_LONG,
+            'TRADE_SHORT': TRADE_SHORT
         }) for symbol in self.symbols}
         self.current_positions = {symbol: None for symbol in self.symbols}
         self.running = True
@@ -188,7 +192,6 @@ class AggressiveFuturesTrader:
                         'close': latest_candle[4],
                         'volume': latest_candle[5]
                     }
-                    strategy.update_candle_history(candle_dict)
                     candle_analysis = strategy.analyze_candle(candle_dict)
                     self.logger.info(f"ANALYZE {symbol}: {candle_analysis}")
                     if not self.current_positions[symbol]:
