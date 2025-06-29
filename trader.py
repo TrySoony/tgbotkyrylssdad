@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from config import *
 from strategy import AggressiveFuturesStrategy
-from tg_bot import send_trade_notification
+from notifications import send_trade_notification
 
 class AggressiveFuturesTrader:
     def __init__(self):

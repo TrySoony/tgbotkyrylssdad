@@ -369,12 +369,5 @@ async def main():
     logger.info("Запуск Telegram-бота...")
     await dp.start_polling(bot)
 
-async def send_trade_notification(text: str):
-    """Отправка уведомления о сделке админу."""
-    try:
-        await bot.send_message(chat_id=TELEGRAM_ADMIN_ID, text=text, parse_mode=ParseMode.HTML)
-    except Exception as e:
-        logger.error(f"Ошибка отправки уведомления: {e}")
-
 if __name__ == "__main__":
     asyncio.run(main()) 
